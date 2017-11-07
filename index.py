@@ -1,12 +1,9 @@
-
-
-
 import json
-import urllib2
+import base64
 import unicodedata
 import re
 import urllib
-
+import urllib2
 
 def returnOpNum(event):
     return int(event['request']['intent']['slots']['opNumber']['value'])
@@ -17,12 +14,14 @@ def returnAnimeName(event):
 
 
 def getto(op,k):
+  
+
   op -=1
   url = "http://jikan.me/api/anime/"
 # open the url and the screen name 
 # (The screen name is the screen name of the user for whom to return results for)
   url += "{}".format(k)
-  response = urllib2.urlopen(url)
+  response = urllib.urlopen(url)
   result = json.load(response)
   ops=[]
   for i in result['opening-theme']:
@@ -49,20 +48,53 @@ def animeNumber(keyword):
     idNumber
     return int(idNumber)
 
+  
+def animeMp3(keyword):
+  
+    keyword = keyword
+    keyword = keyword.replace("  "," ")
+    keyword = base64.b64encode(keyword)
+   
+    url = "https://dmhacker-youtube.herokuapp.com/alexa-search/"
+    url1 = url + keyword
+    response = urllib2.urlopen(url1)
+    result = json.load(response)
+    
+    mp3Link = "https://dmhacker-youtube.herokuapp.com"
+    mp3Link =  mp3Link + result['link']
+    
+    return mp3Link
+  
 
-def handler(event, context):
-    
-    
+def lambda_handler(event, context):
     
     outputSpeech = {"type": "PlainText","text":"Hello World! {}".format("h")}
     reprompt = {"type": "PlainText", "text":"come again?"}
+    
+    
+       
     if event['request']['type']=="IntentRequest":
-        
-     if   event['request']['intent']['name'] == "price" :
-  
+     
+
+         
+#--------------------------UTA PLAYER -------------------------#
+     if   event['request']['intent']['name'] == "utaPlayer" :
+       
+       animeID = animeNumber(returnAnimeName(event))
+       songName = getto(returnOpNum(event),animeID)
+       mp3 = animeMp3(songName)
+       songIntroText = "now playing " + songName   
        return {
         "sessionAttributes": {},
+        
         "response": {
+            
+            
+            "outputSpeech": {
+            "type": "PlainText",
+            "text": songIntroText
+               },
+               
             "directives": [
                 {
                     "type": "AudioPlayer.Play",
@@ -70,23 +102,53 @@ def handler(event, context):
                     "audioItem": {
                         "stream": {
                             "token": "12345",
-                            "url": "http://67.159.62.2/anime_ost/puella-magi-madoka-magica-movie-main-theme-single-colourful/gaflfchqkh/01%20-%20Colourful.mp3",
+                            "url": mp3,
                             "offsetInMilliseconds": 0
                         }
                     }
                 }
+                
             ],
-            "shouldEndSession": False
+            "shouldEndSession": True
           }
         }
 
+#-----------------PAUSE-------------------------~~~~~~~~~
 
+     if   event['request']['intent']['name'] == "AMAZON.PauseIntent" :
+       
+       
+       return {
+        "sessionAttributes": {},
+        
+        "response": {
+            
+            
+         
+            "directives": [
+                {
+                   "type": "AudioPlayer.Stop"
+                }
+                
+            ],
+            "shouldEndSession": True
+          }
+        }
+
+#----------------------------------------------------------
      
      else:
          animeID = animeNumber(returnAnimeName(event))
-         text = "Opening {} of {} is {}".format(returnOpNum(event)+1,returnAnimeName(event),getto(returnOpNum(event),animeID))
+          
+         text = "Opening {} of {} is {}".format(returnOpNum(event),returnAnimeName(event),getto(returnOpNum(event),animeID))
          
          outputSpeech = {"type": "PlainText","text":text}
+         
+         
+         
+         
+    
+         
      reprompt = {"type": "PlainText", "text":"come again?"}
     
     
@@ -94,14 +156,19 @@ def handler(event, context):
     
     r = {"outputSpeech":outputSpeech,"reprompt": reprompt,"shouldEndSession":True}
     response = {"version":"1.0","sessionAttributes": {}, "response":r}
+   
+   
+ 
+   
+   
     return response
-    
-
-
-
-def main():  
-    print getto(1,animeNumber("baccano"))
-    return True
-    
+ 
+ 
+def main():
+    print animeMp3("fullmeteal alchemist")
+ 
+ 
+ 
+ 
 if __name__ == '__main__':
     main()
