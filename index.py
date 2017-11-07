@@ -6,7 +6,19 @@ import urllib
 import urllib2
 
 def returnOpNum(event):
-    return int(event['request']['intent']['slots']['opNumber']['value'])
+    
+    
+    if event['request']['intent']['slots']['opNumber']['value'] == "four":
+        return 4
+    if event['request']['intent']['slots']['opNumber']['value'] == "for":
+        return 4
+                    
+    if event['request']['intent']['slots']['opNumber']['value'] == "two":
+        return 2
+    if event['request']['intent']['slots']['opNumber']['value'] == "to":
+        return 2
+    else:
+        return int(event['request']['intent']['slots']['opNumber']['value'])
     
 def returnAnimeName(event):
     return str(event['request']['intent']['slots']['animeName']['value'])
