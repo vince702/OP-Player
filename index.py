@@ -62,9 +62,17 @@ def animeNumber(keyword):
 
   
 def animeMp3(keyword):
-  
+   
     keyword = keyword
     keyword = keyword.replace("  "," ")
+    keyword += " full"
+              
+              #special case, in the song "ringo mogire beam" needs to search up official version, including all
+              #the names of singers makes it not work
+    if re.search('Ringo',keyword):
+                  keyword = re.sub('by.*','',keyword)
+    
+    
     keyword = base64.b64encode(keyword)
    
     url = "https://dmhacker-youtube.herokuapp.com/alexa-search/"
