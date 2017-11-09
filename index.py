@@ -4,21 +4,23 @@ import unicodedata
 import re
 import urllib
 import urllib2
+import time
 
 def returnOpNum(event):
     
     
-    if event['request']['intent']['slots']['opNumber']['value'] == "four":
-        return 4
-    if event['request']['intent']['slots']['opNumber']['value'] == "for":
-        return 4
-                    
-    if event['request']['intent']['slots']['opNumber']['value'] == "two":
-        return 2
-    if event['request']['intent']['slots']['opNumber']['value'] == "to":
-        return 2
-    else:
-        return int(event['request']['intent']['slots']['opNumber']['value'])
+  if event['request']['intent']['slots']['opNumber']['value'] == "four":
+      return 4
+  if event['request']['intent']['slots']['opNumber']['value'] == "for":
+      return 4
+      
+  if event['request']['intent']['slots']['opNumber']['value'] == "two":
+      return 2
+  if event['request']['intent']['slots']['opNumber']['value'] == "to":
+      return 2
+  
+  else:
+    return int(event['request']['intent']['slots']['opNumber']['value'])
     
 def returnAnimeName(event):
     return str(event['request']['intent']['slots']['animeName']['value'])
@@ -62,17 +64,17 @@ def animeNumber(keyword):
 
   
 def animeMp3(keyword):
-   
+  
     keyword = keyword
     keyword = keyword.replace("  "," ")
     keyword += " full"
-              
-              #special case, in the song "ringo mogire beam" needs to search up official version, including all
-              #the names of singers makes it not work
+    
+    
     if re.search('Ringo',keyword):
-                  keyword = re.sub('by.*','',keyword)
+        keyword = re.sub('by.*','',keyword)
     
-    
+    if re.search('stable',keyword):
+        keyword = re.sub('by.*','',keyword)
     keyword = base64.b64encode(keyword)
    
     url = "https://dmhacker-youtube.herokuapp.com/alexa-search/"
@@ -87,8 +89,8 @@ def animeMp3(keyword):
   
 
 def lambda_handler(event, context):
-    
-    outputSpeech = {"type": "PlainText","text":"Hello World! {}".format("h")}
+    sessionattributes = {}
+    outputSpeech = {"type": "PlainText","text":"Ask me to name opening number of anime name"}
     reprompt = {"type": "PlainText", "text":"come again?"}
     
     
@@ -103,6 +105,7 @@ def lambda_handler(event, context):
        animeID = animeNumber(returnAnimeName(event))
        songName = getto(returnOpNum(event),animeID)
        mp3 = animeMp3(songName)
+       time.sleep(5.5)
        songIntroText = "now playing " + songName   
        return {
         "sessionAttributes": {},
@@ -133,7 +136,7 @@ def lambda_handler(event, context):
           }
         }
 
-#-----------------PAUSE-------------------------~~~~~~~~~
+#--------------------------------PAUSE-------------------------~~~~~~~~~
 
      if   event['request']['intent']['name'] == "AMAZON.PauseIntent" :
        
@@ -155,8 +158,80 @@ def lambda_handler(event, context):
           }
         }
 
-#----------------------------------------------------------
-     
+#-----------------------------Name Opening, Asks to play or not-----------------------
+     if   event['request']['intent']['name'] == "identify" :
+         animeID = animeNumber(returnAnimeName(event))
+         songName = getto(returnOpNum(event),animeID)
+         mp3 = animeMp3(songName)
+        
+         text = "Opening {} of {} is {}".format(returnOpNum(event),returnAnimeName(event),getto(returnOpNum(event),animeID))
+         
+        
+          
+         
+         text = "Opening {} of {} is {}".format(returnOpNum(event),returnAnimeName(event),getto(returnOpNum(event),animeID))
+         reprompt = {"type": "PlainText", "text":"would you like me to play it?"}
+         text += (".   " + reprompt["text"])
+         outputSpeech = {"type": "PlainText","text":text}
+         
+         
+         
+         sessionattributes['mp3link'] = mp3
+         sessionattributes['songName'] = songName
+        
+         
+         r = {"outputSpeech":outputSpeech,"reprompt": reprompt,"shouldEndSession":False}
+         response = {"version":"1.0","sessionAttributes": sessionattributes, "response":r}
+         
+         return response
+         
+#-----------------------------Play? Yes or No  -------------------------------------------         
+         
+     if event['request']['intent']['name'] == "Play" :
+         
+      if event['request']['intent']['slots']['YN']['value'] == "yes" or event['request']['intent']['slots']['YN']['value'] == "yea":   
+          
+       songName  = event['session']['attributes']['songName']
+       songIntroText = "now playing " + songName  
+       mp3 = event['session']['attributes']['mp3link']
+       return {
+        "sessionAttributes": {},
+        
+        "response": {
+            
+            
+            "outputSpeech": {
+            "type": "PlainText",
+            "text": songIntroText
+               },
+               
+            "directives": [
+                {
+                    "type": "AudioPlayer.Play",
+                    "playBehavior": "REPLACE_ALL",
+                    "audioItem": {
+                        "stream": {
+                            "token": "12345",
+                            "url": mp3,
+                            "offsetInMilliseconds": 0
+                        }
+                    }
+                }
+                
+            ],
+            "shouldEndSession": True
+          }
+        }
+        
+      else:
+         r = {"outputSpeech":outputSpeech,"reprompt": reprompt,"shouldEndSession":True}
+         response = {"version":"1.0","sessionAttributes": {}, "response":r}
+         return response
+         
+         
+         
+         
+#---------------------------------------------------------------------------
      else:
          animeID = animeNumber(returnAnimeName(event))
           
@@ -174,7 +249,7 @@ def lambda_handler(event, context):
     
     
     
-    r = {"outputSpeech":outputSpeech,"reprompt": reprompt,"shouldEndSession":True}
+    r = {"outputSpeech":reprompt,"reprompt": reprompt,"shouldEndSession":False}
     response = {"version":"1.0","sessionAttributes": {}, "response":r}
    
    
@@ -182,7 +257,6 @@ def lambda_handler(event, context):
    
    
     return response
- 
  
 def main():
     print animeMp3("fullmeteal alchemist")
