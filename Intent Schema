@@ -1,0 +1,45 @@
+{
+  "intents": [
+    {
+      "intent": "AMAZON.ResumeIntent"
+    },
+    {
+      "intent": "AMAZON.PauseIntent"
+    },
+    {
+      "slots": [
+        {
+          "name": "opNumber",
+          "type": "opNum"
+        },
+        {
+          "name": "animeName",
+          "type": "title"
+        }
+      ],
+      "intent": "identify"
+    },
+    {
+      "slots": [
+        {
+          "name": "animeName",
+          "type": "title"
+        },
+        {
+          "name": "opNumber",
+          "type": "opNum"
+        }
+      ],
+      "intent": "utaPlayer"
+    },
+    {
+      "slots": [
+        {
+          "name": "YN",
+          "type": "yesORno"
+        }
+      ],
+      "intent": "Play"
+    }
+  ]
+}
